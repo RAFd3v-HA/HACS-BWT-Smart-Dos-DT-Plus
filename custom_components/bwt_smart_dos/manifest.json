@@ -5,9 +5,11 @@
   "documentation": "https://github.com/RAFd3v-HA/HACS-BWT-Smart-Dos-DT-Plus",
   "config_flow": true,
   "iot_class": "local_polling",
+  "integration_type": "device",
+  "brand": "bwt_perla",
   "requirements": [],
   "codeowners": [
     "@RAFd3v-HA"
   ],
-  "integration_type": "device"
+  
 }
