@@ -14,51 +14,21 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN, STATUS_CODES
 
 
-SENSORS = [
-    {
-        "key": "fwRev",
-        "name": "Firmware",
-    },
-    {
-        "key": "hwRev",
-        "name": "Hardware Revision",
-    },
-    {
-        "key": "dosingRate",
-        "name": "Dosierrate",
-        "unit": "ml/m³",
-    },
-    {
-        "key": "totCap",
-        "name": "Pouchvolumen",
-        "unit": UnitOfVolume.MILLILITERS,
-        "device_class": SensorDeviceClass.VOLUME,
-    },
-    {
-        "key": "dosedMineral",
-        "name": "Dosierte Menge",
-        "unit": UnitOfVolume.MILLILITERS,
-        "device_class": SensorDeviceClass.VOLUME,
-        "state_class": SensorStateClass.TOTAL_INCREASING,
-    },
-]
-
-
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    entities = []
-
-    entities.append(BwtStatusSensor(coordinator))
-    entities.append(BwtActiveStatesSensor(coordinator))
-    entities.append(BwtTotalWaterSensor(coordinator))
-
-    entities.append(BwtRemainingCapacitySensor(coordinator))
-    entities.append(BwtRemainingCapacityPercentSensor(coordinator))
-    entities.append(BwtRemainingDaysSensor(coordinator))
-
-    for sensor in SENSORS:
-        entities.append(BwtSensor(coordinator, sensor))
+    entities = [
+        BwtStatusSensor(coordinator),
+        BwtActiveStatesSensor(coordinator),
+        BwtTotalWaterSensor(coordinator),
+        BwtRemainingCapacitySensor(coordinator),
+        BwtRemainingCapacityPercentSensor(coordinator),
+        BwtRemainingDaysSensor(coordinator),
+        BwtPouchVolumeSensor(coordinator),
+        BwtExpirationDateSensor(coordinator),
+        BwtProductionDateSensor(coordinator),
+        BwtBatchNumberSensor(coordinator),
+    ]
 
     async_add_entities(entities)
 
@@ -80,50 +50,6 @@ class BaseEntity(CoordinatorEntity):
         )
 
 
-class BwtSensor(BaseEntity, SensorEntity):
-    def __init__(self, coordinator, description):
-        super().__init__(coordinator)
-
-        self.description = description
-
-        self._attr_name = f"BWT {description['name']}"
-        self._attr_unique_id = f"bwt_{description['key']}"
-
-        self._attr_native_unit_of_measurement = (
-            description.get("unit")
-        )
-
-        self._attr_device_class = (
-            description.get("device_class")
-        )
-
-        self._attr_state_class = (
-            description.get("state_class")
-        )
-
-    @property
-    def native_value(self):
-        key = self.description["key"]
-
-        try:
-            for section in self.coordinator.data.values():
-                if isinstance(section, dict) and key in section:
-                    value = section[key]
-
-                    if value is None:
-                        return None
-
-                    if isinstance(value, float):
-                        return round(value, 2)
-
-                    return value
-
-        except Exception:
-            return None
-
-        return None
-
-
 class BwtStatusSensor(BaseEntity, SensorEntity):
     _attr_name = "BWT Status"
     _attr_unique_id = "bwt_status"
@@ -131,7 +57,6 @@ class BwtStatusSensor(BaseEntity, SensorEntity):
     @property
     def native_value(self):
         code = self.coordinator.data["0201"].get("devState")
-
         return STATUS_CODES.get(code, f"Unknown ({code})")
 
 
@@ -168,7 +93,6 @@ class BwtTotalWaterSensor(BaseEntity, SensorEntity):
         try:
             value_ml = self.coordinator.data["0503"]["flow"]["1"]["totFlow"]
             return round(value_ml / 1000, 2)
-
         except Exception:
             return None
 
@@ -184,17 +108,14 @@ class BwtRemainingCapacitySensor(BaseEntity, SensorEntity):
     def native_value(self):
         try:
             return round(
-                self.coordinator.data["0402"]["remCapacity"],
+                self.coordinator.data["0402"]["1"]["remCapacity"],
                 2,
             )
         except Exception:
             return None
 
 
-class BwtRemainingCapacityPercentSensor(
-    BaseEntity,
-    SensorEntity,
-):
+class BwtRemainingCapacityPercentSensor(BaseEntity, SensorEntity):
     _attr_name = "BWT Restvolumen Prozent"
     _attr_unique_id = "bwt_rem_capacity_pct"
 
@@ -203,7 +124,7 @@ class BwtRemainingCapacityPercentSensor(
     @property
     def native_value(self):
         try:
-            return self.coordinator.data["0402"]["remCapacityPct"]
+            return self.coordinator.data["0402"]["1"]["remCapacityPct"]
         except Exception:
             return None
 
@@ -218,6 +139,57 @@ class BwtRemainingDaysSensor(BaseEntity, SensorEntity):
     @property
     def native_value(self):
         try:
-            return self.coordinator.data["0402"]["remCapacityDays"]
+            return self.coordinator.data["0402"]["1"]["remCapacityDays"]
+        except Exception:
+            return None
+
+
+class BwtPouchVolumeSensor(BaseEntity, SensorEntity):
+    _attr_name = "BWT Pouchvolumen"
+    _attr_unique_id = "bwt_tot_cap"
+
+    _attr_native_unit_of_measurement = UnitOfVolume.MILLILITERS
+    _attr_device_class = SensorDeviceClass.VOLUME
+
+    @property
+    def native_value(self):
+        try:
+            return self.coordinator.data["0401"]["1"]["totCap"]
+        except Exception:
+            return None
+
+
+class BwtExpirationDateSensor(BaseEntity, SensorEntity):
+    _attr_name = "BWT Ablaufdatum"
+    _attr_unique_id = "bwt_exp_date"
+
+    @property
+    def native_value(self):
+        try:
+            return self.coordinator.data["0401"]["1"]["expDate"]
+        except Exception:
+            return None
+
+
+class BwtProductionDateSensor(BaseEntity, SensorEntity):
+    _attr_name = "BWT Produktionsdatum"
+    _attr_unique_id = "bwt_valid_date"
+
+    @property
+    def native_value(self):
+        try:
+            return self.coordinator.data["0401"]["1"]["validDate"]
+        except Exception:
+            return None
+
+
+class BwtBatchNumberSensor(BaseEntity, SensorEntity):
+    _attr_name = "BWT Batchnummer"
+    _attr_unique_id = "bwt_batch_nr"
+
+    @property
+    def native_value(self):
+        try:
+            return self.coordinator.data["0401"]["1"]["batchNr"]
         except Exception:
             return None

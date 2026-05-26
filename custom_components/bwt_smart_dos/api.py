@@ -24,9 +24,7 @@ class BwtApi:
 
             results = await asyncio.gather(*tasks)
 
-        data = {}
-
-        for uuid, result in zip(UUIDS, results):
-            data[uuid] = result
-
-        return data
+        return {
+            uuid: result
+            for uuid, result in zip(UUIDS, results)
+        }

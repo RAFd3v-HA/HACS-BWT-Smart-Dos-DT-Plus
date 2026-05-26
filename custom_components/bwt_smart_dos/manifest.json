@@ -1,12 +1,14 @@
 {
   "domain": "bwt_smart_dos",
   "name": "BWT Smart Dos",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "documentation": "https://github.com/RAFd3v-HA/HACS-BWT-Smart-Dos-DT-Plus",
   "config_flow": true,
   "iot_class": "local_polling",
   "integration_type": "device",
   "brand": "bwt_smart_dos",
   "requirements": [],
-  "codeowners": ["@RAFd3v-HA"]
-  }
+  "codeowners": [
+    "@RAFd3v-HA"
+  ]
+}
