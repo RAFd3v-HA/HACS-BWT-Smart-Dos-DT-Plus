@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "BWT Smart Dos",
-        "description": "IP-Adresse der BWT Smart Dos eingeben",
+        "description": "IP-Adresse eingeben",
         "data": {
           "host": "IP-Adresse"
         }

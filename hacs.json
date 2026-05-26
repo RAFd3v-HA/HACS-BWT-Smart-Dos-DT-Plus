@@ -1,9 +1,5 @@
 {
   "name": "HACS-BWT-Smart-Dos-DT-Plus",
   "content_in_root": false,
-  "render_readme": true,
-  "domains": [
-    "sensor",
-    "binary_sensor"
-  ]
+  "render_readme": true
 }

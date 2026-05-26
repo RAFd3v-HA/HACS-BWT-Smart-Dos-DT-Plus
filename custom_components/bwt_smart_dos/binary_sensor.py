@@ -2,7 +2,9 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
 )
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+)
 
 from .const import DOMAIN, STATUS_CODES
 
@@ -21,7 +23,11 @@ ERROR_CODES = {
 }
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass,
+    entry,
+    async_add_entities,
+):
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities = []
@@ -42,13 +48,20 @@ class BwtErrorBinarySensor(
     CoordinatorEntity,
     BinarySensorEntity,
 ):
-    def __init__(self, coordinator, code, name):
+    def __init__(
+        self,
+        coordinator,
+        code,
+        name,
+    ):
         super().__init__(coordinator)
 
         self.code = code
 
-        self._attr_name = f"BWT {name}"
-        self._attr_unique_id = f"bwt_error_{code}"
+        self._attr_name = name
+        self._attr_unique_id = (
+            f"error_{code}"
+        )
 
     @property
     def is_on(self):
