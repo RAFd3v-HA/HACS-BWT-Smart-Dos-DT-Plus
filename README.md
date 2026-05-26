@@ -1,4 +1,6 @@
-
+<p align="center">
+  <img src="sensors.png" width="180">
+</p>
 
 # HACS-BWT-Smart-Dos-DT-Plus
 
