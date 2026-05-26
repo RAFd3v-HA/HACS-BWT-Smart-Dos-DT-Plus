@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="icon.png" width="180">
-</p>
+
 
 # HACS-BWT-Smart-Dos-DT-Plus
 
