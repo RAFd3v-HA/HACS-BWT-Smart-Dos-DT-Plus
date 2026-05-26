@@ -10,7 +10,5 @@
   "codeowners": [
     "@https://github.com/RAFd3v-HA/HACS-BWT-Smart-Dos-DT-Plus"
   ],
-  "integration_type": "device",
-  "logo": "custom_components/bwt_smart_dos/logo.png",
-  "icon": "custom_components/bwt_smart_dos/icon.png"
+  "integration_type": "device"
 }
