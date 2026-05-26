@@ -29,23 +29,6 @@ SENSORS = [
         "unit": "ml/m³",
     },
     {
-        "key": "remCapacity",
-        "name": "Restvolumen",
-        "unit": UnitOfVolume.MILLILITERS,
-        "device_class": SensorDeviceClass.VOLUME,
-    },
-    {
-        "key": "remCapacityPct",
-        "name": "Restvolumen Prozent",
-        "unit": PERCENTAGE,
-    },
-    {
-        "key": "remCapacityDays",
-        "name": "Resttage",
-        "unit": UnitOfTime.DAYS,
-        "device_class": SensorDeviceClass.DURATION,
-    },
-    {
         "key": "totCap",
         "name": "Pouchvolumen",
         "unit": UnitOfVolume.MILLILITERS,
@@ -69,6 +52,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     entities.append(BwtStatusSensor(coordinator))
     entities.append(BwtActiveStatesSensor(coordinator))
     entities.append(BwtTotalWaterSensor(coordinator))
+
+    entities.append(BwtRemainingCapacitySensor(coordinator))
+    entities.append(BwtRemainingCapacityPercentSensor(coordinator))
+    entities.append(BwtRemainingDaysSensor(coordinator))
 
     for sensor in SENSORS:
         entities.append(BwtSensor(coordinator, sensor))
@@ -118,9 +105,21 @@ class BwtSensor(BaseEntity, SensorEntity):
     def native_value(self):
         key = self.description["key"]
 
-        for section in self.coordinator.data.values():
-            if key in section:
-                return section[key]
+        try:
+            for section in self.coordinator.data.values():
+                if isinstance(section, dict) and key in section:
+                    value = section[key]
+
+                    if value is None:
+                        return None
+
+                    if isinstance(value, float):
+                        return round(value, 2)
+
+                    return value
+
+        except Exception:
+            return None
 
         return None
 
@@ -167,11 +166,58 @@ class BwtTotalWaterSensor(BaseEntity, SensorEntity):
     @property
     def native_value(self):
         try:
-            value_ml = self.coordinator.data["0503"]["flow"]["1"][
-                "totFlow"
-            ]
-
+            value_ml = self.coordinator.data["0503"]["flow"]["1"]["totFlow"]
             return round(value_ml / 1000, 2)
 
+        except Exception:
+            return None
+
+
+class BwtRemainingCapacitySensor(BaseEntity, SensorEntity):
+    _attr_name = "BWT Restvolumen"
+    _attr_unique_id = "bwt_rem_capacity"
+
+    _attr_native_unit_of_measurement = UnitOfVolume.MILLILITERS
+    _attr_device_class = SensorDeviceClass.VOLUME
+
+    @property
+    def native_value(self):
+        try:
+            return round(
+                self.coordinator.data["0402"]["remCapacity"],
+                2,
+            )
+        except Exception:
+            return None
+
+
+class BwtRemainingCapacityPercentSensor(
+    BaseEntity,
+    SensorEntity,
+):
+    _attr_name = "BWT Restvolumen Prozent"
+    _attr_unique_id = "bwt_rem_capacity_pct"
+
+    _attr_native_unit_of_measurement = PERCENTAGE
+
+    @property
+    def native_value(self):
+        try:
+            return self.coordinator.data["0402"]["remCapacityPct"]
+        except Exception:
+            return None
+
+
+class BwtRemainingDaysSensor(BaseEntity, SensorEntity):
+    _attr_name = "BWT Resttage"
+    _attr_unique_id = "bwt_rem_days"
+
+    _attr_native_unit_of_measurement = UnitOfTime.DAYS
+    _attr_device_class = SensorDeviceClass.DURATION
+
+    @property
+    def native_value(self):
+        try:
+            return self.coordinator.data["0402"]["remCapacityDays"]
         except Exception:
             return None
