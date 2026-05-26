@@ -8,7 +8,7 @@
   "iot_class": "local_polling",
   "requirements": [],
   "codeowners": [
-    "@https://github.com/RAFd3v-HA/HACS-BWT-Smart-Dos-DT-Plus"
+    "@RAFd3v-HA"
   ],
   "integration_type": "device"
 }
