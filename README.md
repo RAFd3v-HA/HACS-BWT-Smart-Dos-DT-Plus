@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="sensors.png" width="180">
+  <img src="Sensors.png" width="180">
 </p>
 
 # HACS-BWT-Smart-Dos-DT-Plus
