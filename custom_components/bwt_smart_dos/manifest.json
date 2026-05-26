@@ -8,5 +8,5 @@
   "integration_type": "device",
   "brand": "bwt_perla",
   "requirements": [],
-  "codeowners": ["@RAFd3v-HA"],
+  "codeowners": ["@RAFd3v-HA"]
   }
