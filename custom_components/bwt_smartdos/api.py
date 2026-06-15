@@ -37,7 +37,6 @@ class BWTApi:
         return self._port
 
     async def async_get(self, uuid: str) -> dict[str, Any]:
-        """Read one GATT UUID endpoint."""
         url = f"{self._base_url}/{uuid}"
         try:
             async with self._session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
@@ -52,7 +51,6 @@ class BWTApi:
         return data
 
     async def async_validate(self) -> dict[str, Any]:
-        """Validate connection with safe endpoints."""
         device = await self.async_get("0201")
         wifi = await self.async_get("0104")
         return {"0201": device, "0104": wifi}

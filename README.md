@@ -2,48 +2,68 @@
 
 Home Assistant custom integration for the local HTTP API of the BWT Smart Dos DT Plus.
 
-Version: **0.1.1**
+Version: **0.1.4**
 
-## Changes in 0.1.1
+## Changes in 0.1.4
 
-- Fixed config flow handler loading.
-- Removed fragile imports from `homeassistant.const`.
-- Renamed config flow class to `ConfigFlow`.
+- Removed the `WLAN Name` sensor because endpoint `0104.ssid` returns `null`.
+- Automatically removes the old `WLAN Name` entity from the entity registry.
+- Keeps `WLAN Signal` and `MAC-Adresse`.
 
-## Installation
+## Changes in 0.1.3
 
-Copy this repository to:
+- Automatically removes obsolete alarm binary sensors from older test builds.
+- Automatically removes the obsolete `Wirkstoff Haltbarkeitsdatum` entity.
+- Makes pouch selection from endpoint `0401` robust against different object keys.
+- Retries incomplete `0401` data every 120 seconds until the device supplies a valid batch number, order number, or active substance ID.
+- Displays `Nicht von API geliefert` instead of `0` or `Unbekannt` for missing metadata.
+- Bestellnummer uses `0401.*.orderNr`.
+- Chargennummer uses `0401.*.batchNr`.
+- Wirkstofftyp uses `0401.*.id`.
+
+## Important API behavior
+
+The provided API example contains:
+
+```json
+{
+  "ssid": null
+}
+```
+
+Therefore no real WLAN name can be displayed until the device itself supplies `ssid`.
+
+The provided pouch example contains:
+
+```json
+{
+  "orderNr": 0,
+  "batchNr": 9650,
+  "id": 1
+}
+```
+
+This means:
+
+- Bestellnummer: not supplied by the device
+- Chargennummer: `9650`
+- Wirkstofftyp: `L1/LE`
+
+## Installation/update
+
+Delete the existing contents of:
 
 ```text
 /config/custom_components/bwt_smartdos
 ```
 
-Restart Home Assistant and add the integration via:
+Copy the new `custom_components/bwt_smartdos` folder into place and restart Home Assistant completely.
 
-```text
-Settings → Devices & services → Add integration → BWT Smart Dos DT Plus
-```
+When using HACS:
 
-## API
+1. Replace the repository contents on GitHub.
+2. In HACS choose **Redownload** for the integration.
+3. Restart Home Assistant.
+4. Confirm that `manifest.json` shows version `0.1.3`.
 
-The integration reads:
-
-- `0104`
-- `0201`
-- `0202`
-- `0208`
-- `0401`
-- `0402`
-- `0503`
-- `0505`
-
-The API port is fixed to **80**.
-
-## Notes
-
-- Dynamic values are refreshed every 120 seconds.
-- Static values are read once on integration setup/reload.
-- `commDate` is used as commissioning date.
-- `validDate` is used as best-before date.
-- `expDate` is used as active substance expiration date.
-- Total water is converted from ml to l.
+The integration will remove obsolete entities during the first setup after the update.

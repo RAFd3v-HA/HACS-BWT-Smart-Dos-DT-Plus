@@ -18,16 +18,14 @@ _LOGGER = logging.getLogger(__name__)
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for BWT Smart Dos DT Plus."""
 
-    VERSION = 1
+    VERSION = 3
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
-        """Handle user setup."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
             ip = str(user_input[CONF_IP]).strip()
-            session = async_get_clientsession(self.hass)
-            api = BWTApi(session, ip, DEFAULT_PORT)
+            api = BWTApi(async_get_clientsession(self.hass), ip, DEFAULT_PORT)
 
             try:
                 validation = await api.async_validate()
@@ -44,9 +42,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 unique_id = device.get("iotDevId") or wifi.get("mac") or ip
 
                 await self.async_set_unique_id(str(unique_id))
-                self._abort_if_unique_id_configured(
-                    updates={CONF_IP: ip, CONF_PORT: DEFAULT_PORT}
-                )
+                self._abort_if_unique_id_configured(updates={CONF_IP: ip, CONF_PORT: DEFAULT_PORT})
 
                 title = f"BWT Smart Dos {ip}"
                 if device.get("productCode"):

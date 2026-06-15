@@ -26,11 +26,17 @@
       "uptime_reboot": {
         "name": "Uptime since reboot"
       },
+      "operating_time": {
+        "name": "Total operating time"
+      },
       "status": {
         "name": "Status"
       },
       "active_messages": {
         "name": "Active messages"
+      },
+      "errors": {
+        "name": "Errors"
       },
       "remaining_volume_ml": {
         "name": "Remaining volume"
@@ -46,9 +52,6 @@
       },
       "dosed_mineral": {
         "name": "Dosed active substance"
-      },
-      "wifi_name": {
-        "name": "Wi-Fi name"
       },
       "firmware": {
         "name": "Firmware"
@@ -77,43 +80,13 @@
       "mineral_type": {
         "name": "Active substance type"
       },
-      "mineral_valid_date": {
-        "name": "Active substance best-before date"
-      },
       "mineral_expiration_date": {
         "name": "Active substance expiration date"
       }
     },
     "binary_sensor": {
-      "status_7001": {
-        "name": "Mineral container low"
-      },
-      "status_7002": {
-        "name": "Mineral container empty"
-      },
-      "status_7003": {
-        "name": "Active substance expires soon"
-      },
-      "status_7004": {
-        "name": "Active substance expired"
-      },
-      "status_7005": {
-        "name": "AQA Volume alarm"
-      },
-      "status_7006": {
-        "name": "AQA Watch alarm"
-      },
-      "status_7007": {
-        "name": "AQA MaxFlow alarm"
-      },
-      "status_8001": {
-        "name": "Pump error"
-      },
-      "status_8002": {
-        "name": "Pump current error"
-      },
-      "status_8003": {
-        "name": "Pump control error"
+      "error_active": {
+        "name": "Error active"
       }
     }
   },

@@ -12,6 +12,7 @@ CONF_PORT = "port"
 
 MANUFACTURER = "BWT"
 MODEL = "Smart Dos DT Plus"
+VALUE_NOT_PROVIDED = "Nicht von API geliefert"
 
 ENDPOINT_WIFI = "0104"
 ENDPOINT_DEVICE = "0201"
@@ -51,17 +52,10 @@ STATUS_MESSAGES: dict[int, str] = {
     8003: "Pumpen Steuerungsfehler",
 }
 
-BINARY_STATUS_MESSAGES: dict[int, str] = {
-    7001: "Mineralstoffbehälter niedrig",
-    7002: "Mineralstoffbehälter leer",
-    7003: "Wirkstoff läuft bald ab",
-    7004: "Wirkstoff abgelaufen",
-    7005: "AQA Volume Alarm",
-    7006: "AQA Watch Alarm",
-    7007: "AQA MaxFlow Alarm",
-    8001: "Pumpenfehler",
-    8002: "Pumpen Stromfehler",
-    8003: "Pumpen Steuerungsfehler",
+ERROR_STATUS_MESSAGES: dict[int, str] = {
+    status_id: text
+    for status_id, text in STATUS_MESSAGES.items()
+    if status_id >= 7000
 }
 
 MINERAL_TYPES: dict[int, str] = {
@@ -70,4 +64,22 @@ MINERAL_TYPES: dict[int, str] = {
     3: "L4",
     4: "CU2",
     5: "Spüllösung",
+}
+
+DEPRECATED_SENSOR_KEYS = {
+    "mineral_valid_date",
+    "wifi_name",
+}
+
+DEPRECATED_BINARY_SENSOR_KEYS = {
+    "status_7001",
+    "status_7002",
+    "status_7003",
+    "status_7004",
+    "status_7005",
+    "status_7006",
+    "status_7007",
+    "status_8001",
+    "status_8002",
+    "status_8003",
 }

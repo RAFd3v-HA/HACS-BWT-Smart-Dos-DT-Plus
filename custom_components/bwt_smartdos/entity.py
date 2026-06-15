@@ -14,17 +14,13 @@ class BWTEntity(CoordinatorEntity):
 
     def __init__(self, coordinator, entry_id: str, key: str) -> None:
         super().__init__(coordinator)
-        self._entry_id = entry_id
-        self._key = key
         self._attr_unique_id = f"{entry_id}_{key}"
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return device info."""
         data = self.coordinator.data or {}
         device_data = data.get("0201", {})
         wifi_data = data.get("0104", {})
-
         identifier = device_data.get("iotDevId") or wifi_data.get("mac") or self.coordinator.api.ip
 
         return DeviceInfo(

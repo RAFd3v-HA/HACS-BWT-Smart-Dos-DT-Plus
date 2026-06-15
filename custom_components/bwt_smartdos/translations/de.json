@@ -26,11 +26,17 @@
       "uptime_reboot": {
         "name": "Betriebszeit seit Reboot"
       },
+      "operating_time": {
+        "name": "Gesamtbetriebszeit"
+      },
       "status": {
         "name": "Status"
       },
       "active_messages": {
         "name": "Aktive Meldungen"
+      },
+      "errors": {
+        "name": "Fehler"
       },
       "remaining_volume_ml": {
         "name": "Restvolumen"
@@ -46,9 +52,6 @@
       },
       "dosed_mineral": {
         "name": "Dosierte Wirkstoffmenge"
-      },
-      "wifi_name": {
-        "name": "WLAN Name"
       },
       "firmware": {
         "name": "Firmware"
@@ -77,43 +80,13 @@
       "mineral_type": {
         "name": "Wirkstofftyp"
       },
-      "mineral_valid_date": {
-        "name": "Wirkstoff Haltbarkeitsdatum"
-      },
       "mineral_expiration_date": {
         "name": "Wirkstoff Ablaufdatum"
       }
     },
     "binary_sensor": {
-      "status_7001": {
-        "name": "Mineralstoffbehälter niedrig"
-      },
-      "status_7002": {
-        "name": "Mineralstoffbehälter leer"
-      },
-      "status_7003": {
-        "name": "Wirkstoff läuft bald ab"
-      },
-      "status_7004": {
-        "name": "Wirkstoff abgelaufen"
-      },
-      "status_7005": {
-        "name": "AQA Volume Alarm"
-      },
-      "status_7006": {
-        "name": "AQA Watch Alarm"
-      },
-      "status_7007": {
-        "name": "AQA MaxFlow Alarm"
-      },
-      "status_8001": {
-        "name": "Pumpenfehler"
-      },
-      "status_8002": {
-        "name": "Pumpen Stromfehler"
-      },
-      "status_8003": {
-        "name": "Pumpen Steuerungsfehler"
+      "error_active": {
+        "name": "Fehler aktiv"
       }
     }
   },

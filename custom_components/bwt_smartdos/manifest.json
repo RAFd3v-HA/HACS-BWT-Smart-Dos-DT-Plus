@@ -1,7 +1,7 @@
 {
   "domain": "bwt_smartdos",
   "name": "BWT Smart Dos DT Plus",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "config_flow": true,
   "documentation": "https://github.com/flavnewhome/bwt_smartdos",
   "issue_tracker": "https://github.com/flavnewhome/bwt_smartdos/issues",

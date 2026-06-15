@@ -22,9 +22,6 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
         return value
 
     return {
-        "entry": {
-            "title": entry.title,
-            "data": redact(dict(entry.data)),
-        },
+        "entry": {"title": entry.title, "data": redact(dict(entry.data))},
         "last_data": redact(coordinator.data or {}),
     }
