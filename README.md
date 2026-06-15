@@ -528,16 +528,3 @@ Die Entwickler übernehmen keine Haftung für:
 
 Diese Integration greift ausschließlich lesend auf die dokumentierten API-Endpunkte zu.
 
-## Lizenz
-
-Dieses Projekt wird unter der MIT-Lizenz veröffentlicht.
-
-Weitere Informationen stehen in der Datei:
-
-```text
-LICENSE
-```
-
-## Danksagung
-
-Vielen Dank an BWT für die Bereitstellung einer lokalen API und an die Home-Assistant-Community für die Dokumentation und Entwicklungswerkzeuge.
