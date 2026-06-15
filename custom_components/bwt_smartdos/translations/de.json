@@ -1,0 +1,132 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BWT Smart Dos DT Plus",
+        "description": "Gib die lokale IP-Adresse deines BWT Smart Dos ein. Der API-Port wird automatisch auf 80 gesetzt.",
+        "data": {
+          "ip": "IP-Adresse"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum BWT Smart Dos fehlgeschlagen.",
+      "invalid_response": "Das Gerät hat eine ungültige API-Antwort geliefert.",
+      "unknown": "Unerwarteter Fehler."
+    },
+    "abort": {
+      "already_configured": "Dieses BWT Smart Dos ist bereits eingerichtet."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "wifi_signal": {
+        "name": "WLAN Signal"
+      },
+      "uptime_reboot": {
+        "name": "Betriebszeit seit Reboot"
+      },
+      "status": {
+        "name": "Status"
+      },
+      "active_messages": {
+        "name": "Aktive Meldungen"
+      },
+      "remaining_volume_ml": {
+        "name": "Restvolumen"
+      },
+      "remaining_volume_percent": {
+        "name": "Restvolumen"
+      },
+      "remaining_volume_days": {
+        "name": "Restvolumen"
+      },
+      "total_water": {
+        "name": "Gesamtwasser"
+      },
+      "dosed_mineral": {
+        "name": "Dosierte Wirkstoffmenge"
+      },
+      "wifi_name": {
+        "name": "WLAN Name"
+      },
+      "firmware": {
+        "name": "Firmware"
+      },
+      "hardware": {
+        "name": "Hardware"
+      },
+      "product_code": {
+        "name": "Produktcode"
+      },
+      "mac_address": {
+        "name": "MAC-Adresse"
+      },
+      "commissioning_date": {
+        "name": "Inbetriebnahmedatum"
+      },
+      "pouch_volume": {
+        "name": "Pouchvolumen"
+      },
+      "order_number": {
+        "name": "Bestellnummer"
+      },
+      "batch_number": {
+        "name": "Chargennummer"
+      },
+      "mineral_type": {
+        "name": "Wirkstofftyp"
+      },
+      "mineral_valid_date": {
+        "name": "Wirkstoff Haltbarkeitsdatum"
+      },
+      "mineral_expiration_date": {
+        "name": "Wirkstoff Ablaufdatum"
+      }
+    },
+    "binary_sensor": {
+      "status_7001": {
+        "name": "Mineralstoffbehälter niedrig"
+      },
+      "status_7002": {
+        "name": "Mineralstoffbehälter leer"
+      },
+      "status_7003": {
+        "name": "Wirkstoff läuft bald ab"
+      },
+      "status_7004": {
+        "name": "Wirkstoff abgelaufen"
+      },
+      "status_7005": {
+        "name": "AQA Volume Alarm"
+      },
+      "status_7006": {
+        "name": "AQA Watch Alarm"
+      },
+      "status_7007": {
+        "name": "AQA MaxFlow Alarm"
+      },
+      "status_8001": {
+        "name": "Pumpenfehler"
+      },
+      "status_8002": {
+        "name": "Pumpen Stromfehler"
+      },
+      "status_8003": {
+        "name": "Pumpen Steuerungsfehler"
+      }
+    }
+  },
+  "services": {
+    "reload": {
+      "name": "Neu laden",
+      "description": "Eine oder alle BWT Smart Dos Konfigurationseinträge neu laden.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Home-Assistant-Konfigurationseintrags-ID."
+        }
+      }
+    }
+  }
+}

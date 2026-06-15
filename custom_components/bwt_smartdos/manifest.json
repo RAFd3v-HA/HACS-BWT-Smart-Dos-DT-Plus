@@ -1,0 +1,13 @@
+{
+  "domain": "bwt_smartdos",
+  "name": "BWT Smart Dos DT Plus",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/flavnewhome/bwt_smartdos",
+  "issue_tracker": "https://github.com/flavnewhome/bwt_smartdos/issues",
+  "codeowners": [
+    "@flavnewhome"
+  ],
+  "iot_class": "local_polling",
+  "requirements": []
+}
