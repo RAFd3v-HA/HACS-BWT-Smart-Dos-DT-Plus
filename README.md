@@ -2,68 +2,65 @@
 
 Home Assistant custom integration for the local HTTP API of the BWT Smart Dos DT Plus.
 
-Version: **0.1.4**
+Version: **0.1.6**
 
-## Changes in 0.1.4
+## Changes in 0.1.6
 
-- Removed the `WLAN Name` sensor because endpoint `0104.ssid` returns `null`.
-- Automatically removes the old `WLAN Name` entity from the entity registry.
-- Keeps `WLAN Signal` and `MAC-Adresse`.
+- `Gesamtbetriebszeit` is displayed in days instead of hours.
+- `Betriebszeit seit Reboot` is displayed as elapsed `HH:MM`.
+- The hours in `HH:MM` may exceed 23, for example `27:15`.
 
-## Changes in 0.1.3
+## Changes in 0.1.5
 
-- Automatically removes obsolete alarm binary sensors from older test builds.
-- Automatically removes the obsolete `Wirkstoff Haltbarkeitsdatum` entity.
-- Makes pouch selection from endpoint `0401` robust against different object keys.
-- Retries incomplete `0401` data every 120 seconds until the device supplies a valid batch number, order number, or active substance ID.
-- Displays `Nicht von API geliefert` instead of `0` or `Unbekannt` for missing metadata.
-- Bestellnummer uses `0401.*.orderNr`.
-- Chargennummer uses `0401.*.batchNr`.
-- Wirkstofftyp uses `0401.*.id`.
+The device page is now deliberately grouped.
 
-## Important API behavior
+### Main sensor section
 
-The provided API example contains:
+Only these entities are shown as primary entities:
 
-```json
-{
-  "ssid": null
-}
-```
+- Aktive Meldung
+- Fehler
+- Gesamtwasser
+- Restvolumen in ml
+- Restvolumen in %
+- Restvolumen in Tagen
 
-Therefore no real WLAN name can be displayed until the device itself supplies `ssid`.
+`Fehler` is a Home Assistant problem binary sensor:
 
-The provided pouch example contains:
+- Off: OK, shown with a check mark
+- On: Problem, shown as a warning
+- The exact active warning/error text is available in the
+  `aktive_fehler` attribute
 
-```json
-{
-  "orderNr": 0,
-  "batchNr": 9650,
-  "id": 1
-}
-```
+### Diagnostics section
 
-This means:
+All technical and metadata values are shown under Diagnostics:
 
-- Bestellnummer: not supplied by the device
-- Chargennummer: `9650`
-- Wirkstofftyp: `L1/LE`
+- Bestellnummer
+- Chargennummer
+- Firmware
+- Hardware
+- Produktcode
+- MAC-Adresse
+- Inbetriebnahmedatum
+- Pouchvolumen
+- Wirkstofftyp
+- Wirkstoff Ablaufdatum
+- WLAN Signal
+- Betriebszeit seit Reboot
+- Gesamtbetriebszeit
+- Dosierte Wirkstoffmenge
 
-## Installation/update
+The duplicate `Status` and text-based `Fehler` entities from earlier
+test versions are automatically removed from the entity registry.
 
-Delete the existing contents of:
+## API limitations
 
-```text
-/config/custom_components/bwt_smartdos
-```
+When `orderNr` or `batchNr` is `0`, the device has not supplied a useful
+number. In that case the integration displays `Nicht von API geliefert`.
 
-Copy the new `custom_components/bwt_smartdos` folder into place and restart Home Assistant completely.
+## Update
 
-When using HACS:
-
-1. Replace the repository contents on GitHub.
-2. In HACS choose **Redownload** for the integration.
-3. Restart Home Assistant.
-4. Confirm that `manifest.json` shows version `0.1.3`.
-
-The integration will remove obsolete entities during the first setup after the update.
+Replace the repository contents, redownload the integration in HACS and
+restart Home Assistant completely. Confirm that `manifest.json` contains
+version `0.1.5`.

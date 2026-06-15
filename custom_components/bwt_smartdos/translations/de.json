@@ -29,14 +29,8 @@
       "operating_time": {
         "name": "Gesamtbetriebszeit"
       },
-      "status": {
-        "name": "Status"
-      },
       "active_messages": {
-        "name": "Aktive Meldungen"
-      },
-      "errors": {
-        "name": "Fehler"
+        "name": "Aktive Meldung"
       },
       "remaining_volume_ml": {
         "name": "Restvolumen"
@@ -86,7 +80,7 @@
     },
     "binary_sensor": {
       "error_active": {
-        "name": "Fehler aktiv"
+        "name": "Fehler"
       }
     }
   },

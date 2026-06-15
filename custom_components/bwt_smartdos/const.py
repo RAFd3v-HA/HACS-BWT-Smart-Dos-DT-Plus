@@ -69,6 +69,8 @@ MINERAL_TYPES: dict[int, str] = {
 DEPRECATED_SENSOR_KEYS = {
     "mineral_valid_date",
     "wifi_name",
+    "status",
+    "errors",
 }
 
 DEPRECATED_BINARY_SENSOR_KEYS = {

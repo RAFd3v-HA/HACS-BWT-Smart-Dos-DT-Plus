@@ -85,9 +85,9 @@ async def async_migrate_entry(
     entry: ConfigEntry,
 ) -> bool:
     """Migrate old test entries and remove obsolete entities."""
-    if entry.version < 3:
+    if entry.version < 4:
         _remove_deprecated_entities(hass, entry)
-        hass.config_entries.async_update_entry(entry, version=3)
+        hass.config_entries.async_update_entry(entry, version=4)
 
     return True
 
