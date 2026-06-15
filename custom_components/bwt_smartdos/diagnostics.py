@@ -8,24 +8,10 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 
-
-TO_REDACT = {
-    "ssid",
-    "ip",
-    "sn",
-    "sg",
-    "pDns",
-    "sDns",
-    "mac",
-    "iotDevId",
-}
+TO_REDACT = {"ssid", "ip", "sn", "sg", "pDns", "sDns", "mac", "iotDevId"}
 
 
-async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-) -> dict[str, Any]:
-    """Return diagnostics for a config entry."""
+async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
     def redact(value: Any) -> Any:

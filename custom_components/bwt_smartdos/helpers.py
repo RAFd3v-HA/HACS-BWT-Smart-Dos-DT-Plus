@@ -8,7 +8,6 @@ from .const import MINERAL_TYPES, STATUS_MESSAGES
 
 
 def first_pouch(data: dict[str, Any] | None) -> dict[str, Any]:
-    """Return first pouch object from endpoint 0401/0402."""
     if not isinstance(data, dict):
         return {}
     value = data.get("1")
@@ -16,7 +15,6 @@ def first_pouch(data: dict[str, Any] | None) -> dict[str, Any]:
 
 
 def parse_float(value: Any) -> float | None:
-    """Parse float safely."""
     if value is None:
         return None
     try:
@@ -26,7 +24,6 @@ def parse_float(value: Any) -> float | None:
 
 
 def parse_int(value: Any) -> int | None:
-    """Parse int safely."""
     if value is None:
         return None
     try:
@@ -35,24 +32,21 @@ def parse_int(value: Any) -> int | None:
         return None
 
 
+def round_or_none(value: Any, digits: int) -> float | None:
+    parsed = parse_float(value)
+    if parsed is None:
+        return None
+    return round(parsed, digits)
+
+
 def seconds_to_hours(value: Any) -> float | None:
-    """Convert seconds to hours."""
     seconds = parse_float(value)
     if seconds is None:
         return None
     return round(seconds / 3600, 2)
 
 
-def ml_to_l(value: Any) -> float | None:
-    """Convert millilitres to litres."""
-    millilitres = parse_float(value)
-    if millilitres is None:
-        return None
-    return round(millilitres / 1000, 3)
-
-
 def status_text(value: Any) -> str | None:
-    """Return status text for one status ID."""
     status_id = parse_int(value)
     if status_id is None:
         return None
@@ -60,7 +54,6 @@ def status_text(value: Any) -> str | None:
 
 
 def active_states_text(value: Any) -> str | None:
-    """Return text for active state list."""
     if not isinstance(value, list):
         return None
     if not value:
@@ -69,7 +62,6 @@ def active_states_text(value: Any) -> str | None:
 
 
 def mineral_type_text(value: Any) -> str | None:
-    """Return mineral type text."""
     mineral_id = parse_int(value)
     if mineral_id is None:
         return None
@@ -77,7 +69,6 @@ def mineral_type_text(value: Any) -> str | None:
 
 
 def iso_date(value: Any) -> str | None:
-    """Return YYYY-MM-DD from an ISO timestamp when possible."""
     if not isinstance(value, str) or not value:
         return None
     try:
@@ -87,10 +78,6 @@ def iso_date(value: Any) -> str | None:
 
 
 def total_flow_litres(flow_payload: dict[str, Any] | None) -> float | None:
-    """Return total treated water in litres from endpoint 0503.
-
-    Endpoint values are given in millilitres. All flow channels are summed.
-    """
     if not isinstance(flow_payload, dict):
         return None
     flow = flow_payload.get("flow")
@@ -100,7 +87,7 @@ def total_flow_litres(flow_payload: dict[str, Any] | None) -> float | None:
     total_ml = 0.0
     found = False
     for item in flow.values():
-        if isinstance(item, dict) and "totFlow" in item:
+        if isinstance(item, dict):
             parsed = parse_float(item.get("totFlow"))
             if parsed is not None:
                 total_ml += parsed

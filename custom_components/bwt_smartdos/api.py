@@ -30,12 +30,10 @@ class BWTApi:
 
     @property
     def ip(self) -> str:
-        """Return device IP."""
         return self._ip
 
     @property
     def port(self) -> int:
-        """Return API port."""
         return self._port
 
     async def async_get(self, uuid: str) -> dict[str, Any]:
@@ -54,7 +52,7 @@ class BWTApi:
         return data
 
     async def async_validate(self) -> dict[str, Any]:
-        """Validate the connection and return identification data."""
+        """Validate connection with safe endpoints."""
         device = await self.async_get("0201")
         wifi = await self.async_get("0104")
         return {"0201": device, "0104": wifi}

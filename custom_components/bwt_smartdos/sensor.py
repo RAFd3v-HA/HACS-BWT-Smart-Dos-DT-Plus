@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, MINERAL_TYPES
+from .const import DOMAIN
 from .entity import BWTEntity
 from .helpers import (
     active_states_text,
@@ -20,18 +20,22 @@ from .helpers import (
     mineral_type_text,
     parse_float,
     parse_int,
+    round_or_none,
     seconds_to_hours,
     status_text,
     total_flow_litres,
 )
-from .coordinator import BWTDataCoordinator
 
 
-@dataclass(frozen=True, kw_only=True)
-class BWTSensorEntityDescription(SensorEntityDescription):
-    """Describe a BWT sensor."""
-
+@dataclass(frozen=True)
+class BWTSensorEntityDescriptionMixin:
+    """Mixin for value function."""
     value_fn: Callable[[dict[str, Any]], Any]
+
+
+@dataclass(frozen=True)
+class BWTSensorEntityDescription(SensorEntityDescription, BWTSensorEntityDescriptionMixin):
+    """BWT sensor entity description."""
 
 
 def _static(data: dict[str, Any], endpoint: str) -> dict[str, Any]:
@@ -42,8 +46,7 @@ def _pouch_static(data: dict[str, Any]) -> dict[str, Any]:
     return first_pouch(_static(data, "0401"))
 
 
-SENSOR_DESCRIPTIONS: tuple[BWTSensorEntityDescription, ...] = (
-    # Dynamic sensors, read every 120 s.
+SENSOR_DESCRIPTIONS = (
     BWTSensorEntityDescription(
         key="wifi_signal",
         translation_key="wifi_signal",
@@ -55,7 +58,7 @@ SENSOR_DESCRIPTIONS: tuple[BWTSensorEntityDescription, ...] = (
         key="uptime_reboot",
         translation_key="uptime_reboot",
         native_unit_of_measurement="h",
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: seconds_to_hours(d.get("0201", {}).get("uptime")),
     ),
     BWTSensorEntityDescription(
@@ -73,8 +76,7 @@ SENSOR_DESCRIPTIONS: tuple[BWTSensorEntityDescription, ...] = (
         translation_key="remaining_volume_ml",
         native_unit_of_measurement="ml",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: round(parse_float(first_pouch(d.get("0402")).get("remCapacity")) or 0, 1)
-        if parse_float(first_pouch(d.get("0402")).get("remCapacity")) is not None else None,
+        value_fn=lambda d: round_or_none(first_pouch(d.get("0402")).get("remCapacity"), 1),
     ),
     BWTSensorEntityDescription(
         key="remaining_volume_percent",
@@ -102,11 +104,8 @@ SENSOR_DESCRIPTIONS: tuple[BWTSensorEntityDescription, ...] = (
         translation_key="dosed_mineral",
         native_unit_of_measurement="ml",
         state_class=SensorStateClass.TOTAL_INCREASING,
-        value_fn=lambda d: round(parse_float(d.get("0505", {}).get("dosedMineral")) or 0, 3)
-        if parse_float(d.get("0505", {}).get("dosedMineral")) is not None else None,
+        value_fn=lambda d: round_or_none(d.get("0505", {}).get("dosedMineral"), 3),
     ),
-
-    # Static sensors, loaded once when the integration starts/reloads.
     BWTSensorEntityDescription(
         key="wifi_name",
         translation_key="wifi_name",
@@ -188,32 +187,21 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up BWT sensors."""
-    coordinator: BWTDataCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        BWTSensor(coordinator, entry.entry_id, description)
-        for description in SENSOR_DESCRIPTIONS
-    )
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities(BWTSensor(coordinator, entry.entry_id, description) for description in SENSOR_DESCRIPTIONS)
 
 
 class BWTSensor(BWTEntity, SensorEntity):
-    """BWT sensor entity."""
+    """BWT sensor."""
 
     entity_description: BWTSensorEntityDescription
 
-    def __init__(
-        self,
-        coordinator: BWTDataCoordinator,
-        entry_id: str,
-        description: BWTSensorEntityDescription,
-    ) -> None:
-        """Initialize the sensor."""
+    def __init__(self, coordinator, entry_id: str, description: BWTSensorEntityDescription) -> None:
         super().__init__(coordinator, entry_id, description.key)
         self.entity_description = description
 
     @property
     def native_value(self) -> Any:
-        """Return the sensor value."""
         if not self.coordinator.data:
             return None
         return self.entity_description.value_fn(self.coordinator.data)

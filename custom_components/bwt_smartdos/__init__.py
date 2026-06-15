@@ -6,24 +6,22 @@ import logging
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_IP, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import DEFAULT_PORT, DOMAIN
+from .const import CONF_IP, CONF_PORT, DEFAULT_PORT, DOMAIN
 from .coordinator import BWTDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS = ["sensor", "binary_sensor"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up integration services."""
+    """Set up services."""
     hass.data.setdefault(DOMAIN, {})
 
     async def async_reload_service(call: ServiceCall) -> None:
-        """Reload all or one BWT Smart Dos config entry."""
         entry_id = call.data.get("entry_id")
         entries = hass.config_entries.async_entries(DOMAIN)
 
@@ -46,13 +44,14 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up BWT Smart Dos from a config entry."""
+    """Set up from config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    ip = entry.data[CONF_IP]
-    port = entry.data.get(CONF_PORT, DEFAULT_PORT)
-
-    coordinator = BWTDataCoordinator(hass, ip, port)
+    coordinator = BWTDataCoordinator(
+        hass,
+        entry.data[CONF_IP],
+        entry.data.get(CONF_PORT, DEFAULT_PORT),
+    )
     await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
@@ -62,7 +61,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
+    """Unload config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)
