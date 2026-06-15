@@ -222,7 +222,8 @@ SENSOR_DESCRIPTIONS = (
         translation_key="mineral_type",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: mineral_type_text(
-            _pouch_static(d).get("id")
+            _pouch_static(d).get("id"),
+            _pouch_static(d).get("ean"),
         ),
     ),
     BWTSensorEntityDescription(

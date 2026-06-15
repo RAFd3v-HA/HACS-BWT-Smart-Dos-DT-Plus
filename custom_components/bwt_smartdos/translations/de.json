@@ -30,7 +30,7 @@
         "name": "Gesamtbetriebszeit"
       },
       "active_messages": {
-        "name": "Aktive Meldung"
+        "name": "Status"
       },
       "remaining_volume_ml": {
         "name": "Restvolumen"
@@ -80,7 +80,7 @@
     },
     "binary_sensor": {
       "error_active": {
-        "name": "Fehler"
+        "name": "Fehlerstatus"
       }
     }
   },

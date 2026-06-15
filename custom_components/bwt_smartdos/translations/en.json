@@ -30,7 +30,7 @@
         "name": "Total operating time"
       },
       "active_messages": {
-        "name": "Active message"
+        "name": "Status"
       },
       "remaining_volume_ml": {
         "name": "Remaining volume"
@@ -80,7 +80,7 @@
     },
     "binary_sensor": {
       "error_active": {
-        "name": "Error"
+        "name": "Error status"
       }
     }
   },

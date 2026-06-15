@@ -2,65 +2,42 @@
 
 Home Assistant custom integration for the local HTTP API of the BWT Smart Dos DT Plus.
 
-Version: **0.1.6**
+Version: **0.1.7**
 
-## Changes in 0.1.6
+## Polling intervals
 
-- `Gesamtbetriebszeit` is displayed in days instead of hours.
-- `Betriebszeit seit Reboot` is displayed as elapsed `HH:MM`.
-- The hours in `HH:MM` may exceed 23, for example `27:15`.
+- Endpoint `0201` for Status and Fehlerstatus: every **10 seconds**
+- Endpoints `0104`, `0402`, `0503`, `0505`: every **120 seconds**
+- Endpoints `0202`, `0208`, `0401`: every **600 seconds**
 
-## Changes in 0.1.5
+Firmware, hardware, uptime and operating time are part of the same `0201`
+response as the status. They therefore arrive with the 10-second response
+without any additional API request.
 
-The device page is now deliberately grouped.
+## Changes in 0.1.7
 
-### Main sensor section
+- Renamed `Aktive Meldung` to `Status`.
+- Renamed `Fehler` to `Fehlerstatus`.
+- Changed the former static endpoint refresh interval to 600 seconds.
+- Added EAN fallback for Wirkstofftyp:
+  `9022000010354` is displayed as `L1/LE`.
+- Existing entity IDs and unique IDs remain unchanged.
 
-Only these entities are shown as primary entities:
+## Main sensor section
 
-- Aktive Meldung
-- Fehler
+- Status
+- Fehlerstatus
 - Gesamtwasser
 - Restvolumen in ml
 - Restvolumen in %
 - Restvolumen in Tagen
 
-`Fehler` is a Home Assistant problem binary sensor:
+## Diagnostics
 
-- Off: OK, shown with a check mark
-- On: Problem, shown as a warning
-- The exact active warning/error text is available in the
-  `aktive_fehler` attribute
-
-### Diagnostics section
-
-All technical and metadata values are shown under Diagnostics:
-
-- Bestellnummer
-- Chargennummer
-- Firmware
-- Hardware
-- Produktcode
-- MAC-Adresse
-- Inbetriebnahmedatum
-- Pouchvolumen
-- Wirkstofftyp
-- Wirkstoff Ablaufdatum
-- WLAN Signal
-- Betriebszeit seit Reboot
-- Gesamtbetriebszeit
-- Dosierte Wirkstoffmenge
-
-The duplicate `Status` and text-based `Fehler` entities from earlier
-test versions are automatically removed from the entity registry.
-
-## API limitations
-
-When `orderNr` or `batchNr` is `0`, the device has not supplied a useful
-number. In that case the integration displays `Nicht von API geliefert`.
+Technical and metadata values remain under Diagnostics.
 
 ## Update
 
 Replace the repository contents, redownload the integration in HACS and
 restart Home Assistant completely. Confirm that `manifest.json` contains
-version `0.1.5`.
+version `0.1.7`.

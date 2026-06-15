@@ -7,6 +7,7 @@ from typing import Any
 from .const import (
     ERROR_STATUS_MESSAGES,
     MINERAL_TYPES,
+    MINERAL_TYPES_BY_EAN,
     STATUS_MESSAGES,
     VALUE_NOT_PROVIDED,
 )
@@ -171,15 +172,20 @@ def has_error_state(value: Any) -> bool | None:
     return any(parse_int(item) in ERROR_STATUS_MESSAGES for item in value)
 
 
-def mineral_type_text(value: Any) -> str:
-    """Map the mineral ID to clear text."""
+def mineral_type_text(value: Any, ean: Any = None) -> str:
+    """Map the mineral ID to clear text and use the EAN as fallback."""
     mineral_id = parse_int(value)
-    if mineral_id is None or mineral_id == 0:
-        return VALUE_NOT_PROVIDED
-    return MINERAL_TYPES.get(
-        mineral_id,
-        f"Unbekannter Wirkstofftyp {mineral_id}",
-    )
+    if mineral_id is not None and mineral_id > 0:
+        return MINERAL_TYPES.get(
+            mineral_id,
+            f"Unbekannter Wirkstofftyp {mineral_id}",
+        )
+
+    ean_number = parse_int(ean)
+    if ean_number in MINERAL_TYPES_BY_EAN:
+        return MINERAL_TYPES_BY_EAN[ean_number]
+
+    return VALUE_NOT_PROVIDED
 
 
 def iso_date(value: Any) -> str | None:

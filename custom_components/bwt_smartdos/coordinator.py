@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from time import monotonic
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -13,88 +14,97 @@ from homeassistant.helpers.update_coordinator import (
 
 from .api import BWTApi, BWTApiError
 from .const import (
+    DATA_ENDPOINTS,
+    DATA_SCAN_INTERVAL_SECONDS,
     DOMAIN,
-    DYNAMIC_ENDPOINTS,
-    ENDPOINT_POUCH,
-    SCAN_INTERVAL,
+    FAST_ENDPOINTS,
     STATIC_ENDPOINTS,
+    STATIC_SCAN_INTERVAL_SECONDS,
+    STATUS_SCAN_INTERVAL,
 )
-from .helpers import pouch_has_identity
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class BWTDataCoordinator(DataUpdateCoordinator):
-    """Fetch dynamic values and cache static values."""
+    """Coordinate fast status, regular measurements and metadata polling."""
 
     def __init__(self, hass: HomeAssistant, ip: str, port: int) -> None:
-        """Initialize coordinator."""
+        """Initialize the coordinator."""
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=SCAN_INTERVAL,
+            update_interval=STATUS_SCAN_INTERVAL,
             always_update=True,
         )
         self.api = BWTApi(async_get_clientsession(hass), ip, port)
+        self.data_cache: dict[str, Any] = {}
         self.static_data: dict[str, Any] = {}
-        self._pouch_identity_complete = False
+        self._last_data_refresh: float | None = None
+        self._last_static_refresh: float | None = None
 
-    async def async_load_static_data(self) -> None:
-        """Load static data once.
+    @staticmethod
+    def _refresh_due(last_refresh: float | None, interval: int) -> bool:
+        """Return whether an endpoint group is due for refresh."""
+        if last_refresh is None:
+            return True
+        return monotonic() - last_refresh >= interval
 
-        Endpoint 0401 is retried during later coordinator updates only when
-        the device initially returns incomplete zero values. Once useful
-        pouch identity data is available, it is cached.
-        """
-        for endpoint in STATIC_ENDPOINTS:
-            if endpoint in self.static_data:
-                continue
-
+    async def _async_refresh_group(
+        self,
+        endpoints: tuple[str, ...],
+        target: dict[str, Any],
+        group_name: str,
+    ) -> None:
+        """Refresh an endpoint group and retain old values on failures."""
+        for endpoint in endpoints:
             try:
-                payload = await self.api.async_get(endpoint)
+                target[endpoint] = await self.api.async_get(endpoint)
             except BWTApiError as err:
                 _LOGGER.warning(
-                    "Could not load static endpoint %s: %s",
+                    "Could not refresh %s endpoint %s: %s",
+                    group_name,
                     endpoint,
                     err,
                 )
-                continue
-
-            self.static_data[endpoint] = payload
-
-            if endpoint == ENDPOINT_POUCH:
-                self._pouch_identity_complete = pouch_has_identity(payload)
-
-    async def async_refresh_incomplete_pouch_data(self) -> None:
-        """Retry 0401 until the device supplies useful pouch identity data."""
-        if self._pouch_identity_complete:
-            return
-
-        try:
-            payload = await self.api.async_get(ENDPOINT_POUCH)
-        except BWTApiError as err:
-            _LOGGER.debug(
-                "Could not refresh incomplete pouch data: %s",
-                err,
-            )
-            return
-
-        self.static_data[ENDPOINT_POUCH] = payload
-        self._pouch_identity_complete = pouch_has_identity(payload)
 
     async def _async_update_data(self) -> dict[str, Any]:
-        """Fetch dynamic data every 120 seconds."""
+        """Fetch status every 10 s, data every 120 s and metadata every 600 s."""
         try:
-            await self.async_load_static_data()
-            await self.async_refresh_incomplete_pouch_data()
+            now = monotonic()
 
-            data: dict[str, Any] = {}
-            for endpoint in DYNAMIC_ENDPOINTS:
-                data[endpoint] = await self.api.async_get(endpoint)
+            if self._refresh_due(
+                self._last_static_refresh,
+                STATIC_SCAN_INTERVAL_SECONDS,
+            ):
+                await self._async_refresh_group(
+                    STATIC_ENDPOINTS,
+                    self.static_data,
+                    "static",
+                )
+                self._last_static_refresh = now
 
-            data["static"] = self.static_data
-            return data
+            if self._refresh_due(
+                self._last_data_refresh,
+                DATA_SCAN_INTERVAL_SECONDS,
+            ):
+                await self._async_refresh_group(
+                    DATA_ENDPOINTS,
+                    self.data_cache,
+                    "data",
+                )
+                self._last_data_refresh = now
+
+            fast_data: dict[str, Any] = {}
+            for endpoint in FAST_ENDPOINTS:
+                fast_data[endpoint] = await self.api.async_get(endpoint)
+
+            return {
+                **self.data_cache,
+                **fast_data,
+                "static": self.static_data,
+            }
 
         except BWTApiError as err:
             raise UpdateFailed(

@@ -5,7 +5,10 @@ from datetime import timedelta
 
 DOMAIN = "bwt_smartdos"
 DEFAULT_PORT = 80
-SCAN_INTERVAL = timedelta(seconds=120)
+
+STATUS_SCAN_INTERVAL = timedelta(seconds=10)
+DATA_SCAN_INTERVAL_SECONDS = 120
+STATIC_SCAN_INTERVAL_SECONDS = 600
 
 CONF_IP = "ip"
 CONF_PORT = "port"
@@ -23,9 +26,12 @@ ENDPOINT_REMAINING = "0402"
 ENDPOINT_FLOW = "0503"
 ENDPOINT_DOSED = "0505"
 
-DYNAMIC_ENDPOINTS = (
-    ENDPOINT_WIFI,
+FAST_ENDPOINTS = (
     ENDPOINT_DEVICE,
+)
+
+DATA_ENDPOINTS = (
+    ENDPOINT_WIFI,
     ENDPOINT_REMAINING,
     ENDPOINT_FLOW,
     ENDPOINT_DOSED,
@@ -64,6 +70,10 @@ MINERAL_TYPES: dict[int, str] = {
     3: "L4",
     4: "CU2",
     5: "Spüllösung",
+}
+
+MINERAL_TYPES_BY_EAN: dict[int, str] = {
+    9022000010354: "L1/LE",
 }
 
 DEPRECATED_SENSOR_KEYS = {
