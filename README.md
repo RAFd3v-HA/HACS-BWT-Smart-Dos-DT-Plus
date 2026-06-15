@@ -51,7 +51,7 @@ http://192.168.1.100/api/v1/gatt/0201
 5. Die Adresse des GitHub-Repositories eintragen:
 
 ```text
-https://github.com/DEIN-GITHUB-NAME/DEIN-REPOSITORY
+https://github.com/RAFd3v-HA/HACS-BWT-Smart-Dos-DT-Plus
 ```
 
 6. Als Kategorie **Integration** auswählen.
