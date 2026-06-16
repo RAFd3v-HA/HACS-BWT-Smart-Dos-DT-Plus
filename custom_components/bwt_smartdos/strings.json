@@ -76,11 +76,21 @@
       },
       "mineral_expiration_date": {
         "name": "Active substance expiration date"
-      }
-    },
-    "binary_sensor": {
-      "error_active": {
-        "name": "Error status"
+      },
+      "active_errors": {
+        "name": "Active error messages"
+      },
+      "daily_water": {
+        "name": "Water consumption today"
+      },
+      "monthly_water": {
+        "name": "Water consumption this month"
+      },
+      "yearly_water": {
+        "name": "Water consumption this year"
+      },
+      "active_warning": {
+        "name": "Active warning"
       }
     }
   },

@@ -2,8 +2,7 @@
   "name": "BWT Smart Dos DT Plus",
   "render_readme": true,
   "domains": [
-    "sensor",
-    "binary_sensor"
+    "sensor"
   ],
   "homeassistant": "2024.8.0"
 }

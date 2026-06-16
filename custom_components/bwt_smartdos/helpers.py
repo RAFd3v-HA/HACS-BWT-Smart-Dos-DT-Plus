@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any
 
 from .const import (
+    EMPTY_DISPLAY_STATE,
     ERROR_STATUS_MESSAGES,
     MINERAL_TYPES,
     MINERAL_TYPES_BY_EAN,
@@ -151,8 +152,34 @@ def active_states_text(value: Any) -> str | None:
     )
 
 
-def error_states_text(value: Any) -> str | None:
-    """Return active warning/error text or OK."""
+
+def active_warning_text(value: Any) -> str | None:
+    """Return a warning based on the remaining substance percentage.
+
+    A zero-width space is used when no warning is active, so the value
+    appears visually empty in Home Assistant.
+    """
+    percentage = parse_float(value)
+    if percentage is None:
+        return None
+
+    if percentage <= 0:
+        return "Wirkstoff leer"
+    if percentage <= 10:
+        return "Wirkstoff kritisch leer"
+    if percentage <= 25:
+        return "Wirkstoff bald leer"
+
+    return EMPTY_DISPLAY_STATE
+
+
+def active_error_messages_text(value: Any) -> str | None:
+    """Return active warning/error messages.
+
+    A zero-width space is used as the valid no-error state so the Home
+    Assistant entity row remains visually empty instead of showing
+    "OK", "Aus", "Unbekannt" or "Nicht verfügbar".
+    """
     if not isinstance(value, list):
         return None
 
@@ -162,7 +189,7 @@ def error_states_text(value: Any) -> str | None:
         if status_id in ERROR_STATUS_MESSAGES:
             errors.append(ERROR_STATUS_MESSAGES[status_id])
 
-    return ", ".join(errors) if errors else "OK"
+    return ", ".join(errors) if errors else EMPTY_DISPLAY_STATE
 
 
 def has_error_state(value: Any) -> bool | None:

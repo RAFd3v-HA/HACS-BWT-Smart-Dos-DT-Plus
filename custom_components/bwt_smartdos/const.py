@@ -16,6 +16,7 @@ CONF_PORT = "port"
 MANUFACTURER = "BWT"
 MODEL = "Smart Dos DT Plus"
 VALUE_NOT_PROVIDED = "Nicht von API geliefert"
+EMPTY_DISPLAY_STATE = "\u200b"
 
 ENDPOINT_WIFI = "0104"
 ENDPOINT_DEVICE = "0201"
@@ -84,6 +85,7 @@ DEPRECATED_SENSOR_KEYS = {
 }
 
 DEPRECATED_BINARY_SENSOR_KEYS = {
+    "error_active",
     "status_7001",
     "status_7002",
     "status_7003",

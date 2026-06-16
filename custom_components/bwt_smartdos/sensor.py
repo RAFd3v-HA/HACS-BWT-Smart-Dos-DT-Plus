@@ -3,22 +3,28 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from decimal import Decimal, InvalidOperation
+from typing import Any, Self
 
 from homeassistant.components.sensor import (
+    RestoreSensor,
+    SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
+    SensorExtraStoredData,
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.const import EntityCategory, UnitOfVolume
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .entity import BWTEntity
 from .helpers import (
-    active_states_text,
+    active_error_messages_text,
+    active_warning_text,
     first_pouch,
     iso_date,
     meaningful_number_text,
@@ -28,6 +34,7 @@ from .helpers import (
     round_or_none,
     seconds_to_days,
     seconds_to_hhmm,
+    status_text,
     text_or_not_provided,
     total_flow_litres,
 )
@@ -48,6 +55,51 @@ class BWTSensorEntityDescription(
     """BWT sensor entity description."""
 
 
+@dataclass
+class BWTPeriodSensorExtraStoredData(SensorExtraStoredData):
+    """Stored data for a period water-consumption sensor."""
+
+    baseline_total: Decimal | None
+    period_id: str | None
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return stored data as a dictionary."""
+        data = super().as_dict()
+        data["baseline_total"] = (
+            str(self.baseline_total)
+            if self.baseline_total is not None
+            else None
+        )
+        data["period_id"] = self.period_id
+        return data
+
+    @classmethod
+    def from_dict(
+        cls,
+        restored: dict[str, Any],
+    ) -> Self | None:
+        """Restore stored period sensor data."""
+        extra = SensorExtraStoredData.from_dict(restored)
+        if extra is None:
+            return None
+
+        try:
+            baseline_total = (
+                Decimal(str(restored["baseline_total"]))
+                if restored.get("baseline_total") is not None
+                else None
+            )
+        except (InvalidOperation, TypeError, ValueError):
+            return None
+
+        return cls(
+            extra.native_value,
+            extra.native_unit_of_measurement,
+            baseline_total,
+            restored.get("period_id"),
+        )
+
+
 def _static(
     data: dict[str, Any],
     endpoint: str,
@@ -62,21 +114,37 @@ def _pouch_static(data: dict[str, Any]) -> dict[str, Any]:
 
 
 SENSOR_DESCRIPTIONS = (
-    # ------------------------------------------------------------------
-    # Primary entities: shown in the main "Sensors" section.
-    # ------------------------------------------------------------------
+    # --------------------------------------------------------------
+    # Primary entities.
+    # --------------------------------------------------------------
     BWTSensorEntityDescription(
         key="active_messages",
         translation_key="active_messages",
-        value_fn=lambda d: active_states_text(
+        value_fn=lambda d: status_text(
+            d.get("0201", {}).get("devState")
+        ),
+    ),
+    BWTSensorEntityDescription(
+        key="active_errors",
+        translation_key="active_errors",
+        value_fn=lambda d: active_error_messages_text(
             d.get("0201", {}).get("activeStates")
+        ),
+    ),
+    BWTSensorEntityDescription(
+        key="active_warning",
+        translation_key="active_warning",
+        value_fn=lambda d: active_warning_text(
+            first_pouch(d.get("0402")).get("remCapacityPct")
         ),
     ),
     BWTSensorEntityDescription(
         key="total_water",
         translation_key="total_water",
-        native_unit_of_measurement="l",
+        native_unit_of_measurement=UnitOfVolume.LITERS,
+        device_class=SensorDeviceClass.WATER,
         state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_display_precision=1,
         value_fn=lambda d: total_flow_litres(d.get("0503")),
     ),
     BWTSensorEntityDescription(
@@ -108,9 +176,9 @@ SENSOR_DESCRIPTIONS = (
         ),
     ),
 
-    # ------------------------------------------------------------------
-    # Diagnostic entities: shown in the "Diagnostics" section.
-    # ------------------------------------------------------------------
+    # --------------------------------------------------------------
+    # Diagnostic entities.
+    # --------------------------------------------------------------
     BWTSensorEntityDescription(
         key="wifi_signal",
         translation_key="wifi_signal",
@@ -237,6 +305,13 @@ SENSOR_DESCRIPTIONS = (
 )
 
 
+PERIOD_SENSOR_KEYS = (
+    ("daily_water", "daily"),
+    ("monthly_water", "monthly"),
+    ("yearly_water", "yearly"),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -244,10 +319,22 @@ async def async_setup_entry(
 ) -> None:
     """Set up BWT sensors."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
+
+    entities: list[SensorEntity] = [
         BWTSensor(coordinator, entry.entry_id, description)
         for description in SENSOR_DESCRIPTIONS
+    ]
+    entities.extend(
+        BWTPeriodWaterSensor(
+            coordinator,
+            entry.entry_id,
+            key,
+            period,
+        )
+        for key, period in PERIOD_SENSOR_KEYS
     )
+
+    async_add_entities(entities)
 
 
 class BWTSensor(BWTEntity, SensorEntity):
@@ -276,4 +363,144 @@ class BWTSensor(BWTEntity, SensorEntity):
             return None
         return self.entity_description.value_fn(
             self.coordinator.data
+        )
+
+
+class BWTPeriodWaterSensor(BWTEntity, RestoreSensor):
+    """Water consumption within the current calendar period."""
+
+    _attr_device_class = SensorDeviceClass.WATER
+    _attr_native_unit_of_measurement = UnitOfVolume.LITERS
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_suggested_display_precision = 1
+
+    def __init__(
+        self,
+        coordinator,
+        entry_id: str,
+        key: str,
+        period: str,
+    ) -> None:
+        """Initialize the period water sensor."""
+        super().__init__(coordinator, entry_id, key)
+        self._attr_translation_key = key
+        self._period = period
+        self._period_id: str | None = None
+        self._baseline_total: Decimal | None = None
+        self._attr_native_value: Decimal | None = None
+
+    def _current_period_id(self) -> str:
+        """Return the current local calendar period identifier."""
+        now = dt_util.now()
+
+        if self._period == "daily":
+            return now.date().isoformat()
+        if self._period == "monthly":
+            return now.strftime("%Y-%m")
+        return now.strftime("%Y")
+
+    def _current_total(self) -> Decimal | None:
+        """Return the lifetime total-water value as Decimal."""
+        if not self.coordinator.data:
+            return None
+
+        total = total_flow_litres(
+            self.coordinator.data.get("0503")
+        )
+        if total is None:
+            return None
+
+        return Decimal(str(total))
+
+    def _update_from_total(self, total: Decimal | None) -> None:
+        """Update current-period consumption from the lifetime counter."""
+        if total is None:
+            return
+
+        current_period = self._current_period_id()
+
+        if self._period_id != current_period:
+            self._period_id = current_period
+            self._baseline_total = total
+            self._attr_native_value = Decimal("0")
+            return
+
+        if self._baseline_total is None:
+            self._baseline_total = total
+            self._attr_native_value = Decimal("0")
+            return
+
+        if total < self._baseline_total:
+            # The lifetime counter was reset or replaced.
+            self._baseline_total = total
+            self._attr_native_value = Decimal("0")
+            return
+
+        self._attr_native_value = (
+            total - self._baseline_total
+        ).quantize(Decimal("0.001"))
+
+    async def async_added_to_hass(self) -> None:
+        """Restore period baseline and current value."""
+        await super().async_added_to_hass()
+
+        restored = await self.async_get_last_sensor_data()
+        current_period = self._current_period_id()
+        current_total = self._current_total()
+
+        if (
+            restored is not None
+            and restored.period_id == current_period
+            and restored.baseline_total is not None
+        ):
+            self._period_id = restored.period_id
+            self._baseline_total = restored.baseline_total
+
+            if current_total is not None:
+                self._update_from_total(current_total)
+            else:
+                try:
+                    self._attr_native_value = Decimal(
+                        str(restored.native_value)
+                    )
+                except (InvalidOperation, TypeError, ValueError):
+                    self._attr_native_value = None
+            return
+
+        self._period_id = current_period
+        self._baseline_total = current_total
+        self._attr_native_value = (
+            Decimal("0")
+            if current_total is not None
+            else None
+        )
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Update the period sensor after coordinator refresh."""
+        self._update_from_total(self._current_total())
+        super()._handle_coordinator_update()
+
+    @property
+    def extra_restore_state_data(
+        self,
+    ) -> BWTPeriodSensorExtraStoredData:
+        """Return data needed to restore this period sensor."""
+        return BWTPeriodSensorExtraStoredData(
+            self.native_value,
+            self.native_unit_of_measurement,
+            self._baseline_total,
+            self._period_id,
+        )
+
+    async def async_get_last_sensor_data(
+        self,
+    ) -> BWTPeriodSensorExtraStoredData | None:
+        """Restore period sensor data."""
+        restored = await self.async_get_last_extra_data()
+        if restored is None:
+            return None
+
+        return BWTPeriodSensorExtraStoredData.from_dict(
+            restored.as_dict()
         )
