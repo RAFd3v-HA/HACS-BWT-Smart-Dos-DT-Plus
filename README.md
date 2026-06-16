@@ -1,3 +1,6 @@
+<img width="321" height="805" alt="Diagnose" src="https://github.com/user-attachments/assets/f1094145-6cfb-4629-b0d5-bbd2c9c6d166" />
+<img width="322" height="661" alt="Sensoren" src="https://github.com/user-attachments/assets/edca5f5f-21a9-4359-a8f5-f7f05cad675f" />
+
 # BWT Smart Dos DT Plus – Home Assistant Integration
 
 Eine benutzerdefinierte Home-Assistant-Integration zur lokalen Auslesung eines **BWT Smart Dos DT Plus** über dessen HTTP-API.
