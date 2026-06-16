@@ -84,13 +84,16 @@
         "name": "Wasserverbrauch heute"
       },
       "monthly_water": {
-        "name": "Wasserverbrauch im Monat"
+        "name": "Wasserverbrauch akt. Monat"
       },
       "yearly_water": {
-        "name": "Wasserverbrauch im Jahr"
+        "name": "Wasserverbrauch Jahr"
       },
       "active_warning": {
         "name": "Aktive Warnung"
+      },
+      "calculated_dosage": {
+        "name": "Wirkstoffdosierung"
       }
     }
   },

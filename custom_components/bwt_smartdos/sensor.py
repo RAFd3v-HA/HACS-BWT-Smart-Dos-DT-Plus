@@ -100,6 +100,60 @@ class BWTPeriodSensorExtraStoredData(SensorExtraStoredData):
         )
 
 
+@dataclass
+class BWTDosageSensorExtraStoredData(SensorExtraStoredData):
+    """Stored data for the calculated active-substance dosage sensor."""
+
+    baseline_water_l: Decimal | None
+    baseline_remaining_ml: Decimal | None
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return stored data as a dictionary."""
+        data = super().as_dict()
+        data["baseline_water_l"] = (
+            str(self.baseline_water_l)
+            if self.baseline_water_l is not None
+            else None
+        )
+        data["baseline_remaining_ml"] = (
+            str(self.baseline_remaining_ml)
+            if self.baseline_remaining_ml is not None
+            else None
+        )
+        return data
+
+    @classmethod
+    def from_dict(
+        cls,
+        restored: dict[str, Any],
+    ) -> Self | None:
+        """Restore stored dosing-calculation data."""
+        extra = SensorExtraStoredData.from_dict(restored)
+        if extra is None:
+            return None
+
+        try:
+            baseline_water_l = (
+                Decimal(str(restored["baseline_water_l"]))
+                if restored.get("baseline_water_l") is not None
+                else None
+            )
+            baseline_remaining_ml = (
+                Decimal(str(restored["baseline_remaining_ml"]))
+                if restored.get("baseline_remaining_ml") is not None
+                else None
+            )
+        except (InvalidOperation, TypeError, ValueError):
+            return None
+
+        return cls(
+            extra.native_value,
+            extra.native_unit_of_measurement,
+            baseline_water_l,
+            baseline_remaining_ml,
+        )
+
+
 def _static(
     data: dict[str, Any],
     endpoint: str,
@@ -333,6 +387,12 @@ async def async_setup_entry(
         )
         for key, period in PERIOD_SENSOR_KEYS
     )
+    entities.append(
+        BWTDosageSensor(
+            coordinator,
+            entry.entry_id,
+        )
+    )
 
     async_add_entities(entities)
 
@@ -504,3 +564,202 @@ class BWTPeriodWaterSensor(BWTEntity, RestoreSensor):
         return BWTPeriodSensorExtraStoredData.from_dict(
             restored.as_dict()
         )
+
+class BWTDosageSensor(BWTEntity, RestoreSensor):
+    """Calculate active-substance dosage from counter differences."""
+
+    _attr_translation_key = "calculated_dosage"
+    _attr_native_unit_of_measurement = "ml/m³"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 2
+
+    def __init__(
+        self,
+        coordinator,
+        entry_id: str,
+    ) -> None:
+        """Initialize the calculated dosage sensor."""
+        super().__init__(
+            coordinator,
+            entry_id,
+            "calculated_dosage",
+        )
+        self._baseline_water_l: Decimal | None = None
+        self._baseline_remaining_ml: Decimal | None = None
+        self._attr_native_value: Decimal | None = None
+        self._last_water_delta_l: Decimal | None = None
+        self._last_mineral_delta_ml: Decimal | None = None
+
+    def _current_values(
+        self,
+    ) -> tuple[Decimal | None, Decimal | None]:
+        """Return current total water and remaining mineral."""
+        if not self.coordinator.data:
+            return None, None
+
+        total_water = total_flow_litres(
+            self.coordinator.data.get("0503")
+        )
+        remaining = parse_float(
+            first_pouch(
+                self.coordinator.data.get("0402")
+            ).get("remCapacity")
+        )
+
+        if total_water is None or remaining is None:
+            return None, None
+
+        return (
+            Decimal(str(total_water)),
+            Decimal(str(remaining)),
+        )
+
+    def _reset_baseline(
+        self,
+        total_water_l: Decimal,
+        remaining_ml: Decimal,
+    ) -> None:
+        """Set a new calculation baseline."""
+        self._baseline_water_l = total_water_l
+        self._baseline_remaining_ml = remaining_ml
+
+    def _update_calculation(
+        self,
+        total_water_l: Decimal | None,
+        remaining_ml: Decimal | None,
+    ) -> None:
+        """Update dosage after a measurable mineral decrease."""
+        if total_water_l is None or remaining_ml is None:
+            return
+
+        if (
+            self._baseline_water_l is None
+            or self._baseline_remaining_ml is None
+        ):
+            self._reset_baseline(total_water_l, remaining_ml)
+            return
+
+        # Counter reset or pouch replacement: start a fresh period.
+        if (
+            total_water_l < self._baseline_water_l
+            or remaining_ml > self._baseline_remaining_ml
+        ):
+            self._reset_baseline(total_water_l, remaining_ml)
+            return
+
+        water_delta_l = total_water_l - self._baseline_water_l
+        mineral_delta_ml = (
+            self._baseline_remaining_ml - remaining_ml
+        )
+
+        # Accumulate until both a meaningful water amount and a measurable
+        # mineral decrease are available. This avoids misleading zero values
+        # and unstable division by very small water quantities.
+        if water_delta_l < Decimal("1"):
+            return
+        if mineral_delta_ml <= Decimal("0"):
+            return
+
+        dosage = (
+            mineral_delta_ml
+            * Decimal("1000")
+            / water_delta_l
+        ).quantize(Decimal("0.01"))
+
+        self._attr_native_value = dosage
+        self._last_water_delta_l = water_delta_l.quantize(
+            Decimal("0.001")
+        )
+        self._last_mineral_delta_ml = mineral_delta_ml.quantize(
+            Decimal("0.001")
+        )
+        self._reset_baseline(total_water_l, remaining_ml)
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the previous value and calculation baseline."""
+        await super().async_added_to_hass()
+
+        restored = await self.async_get_last_sensor_data()
+        current_water, current_remaining = self._current_values()
+
+        if restored is not None:
+            self._baseline_water_l = restored.baseline_water_l
+            self._baseline_remaining_ml = (
+                restored.baseline_remaining_ml
+            )
+
+            try:
+                self._attr_native_value = (
+                    Decimal(str(restored.native_value))
+                    if restored.native_value is not None
+                    else None
+                )
+            except (InvalidOperation, TypeError, ValueError):
+                self._attr_native_value = None
+
+        if (
+            self._baseline_water_l is None
+            or self._baseline_remaining_ml is None
+        ):
+            if (
+                current_water is not None
+                and current_remaining is not None
+            ):
+                self._reset_baseline(
+                    current_water,
+                    current_remaining,
+                )
+            return
+
+        self._update_calculation(
+            current_water,
+            current_remaining,
+        )
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Recalculate after coordinator updates."""
+        total_water, remaining = self._current_values()
+        self._update_calculation(total_water, remaining)
+        super()._handle_coordinator_update()
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose differences used for the latest calculation."""
+        attributes: dict[str, Any] = {}
+
+        if self._last_water_delta_l is not None:
+            attributes["berechnungsbasis_wasser_l"] = float(
+                self._last_water_delta_l
+            )
+        if self._last_mineral_delta_ml is not None:
+            attributes["verbrauchter_wirkstoff_ml"] = float(
+                self._last_mineral_delta_ml
+            )
+
+        return attributes
+
+    @property
+    def extra_restore_state_data(
+        self,
+    ) -> BWTDosageSensorExtraStoredData:
+        """Return data required to restore the calculation."""
+        return BWTDosageSensorExtraStoredData(
+            self.native_value,
+            self.native_unit_of_measurement,
+            self._baseline_water_l,
+            self._baseline_remaining_ml,
+        )
+
+    async def async_get_last_sensor_data(
+        self,
+    ) -> BWTDosageSensorExtraStoredData | None:
+        """Restore dosing sensor data."""
+        restored = await self.async_get_last_extra_data()
+        if restored is None:
+            return None
+
+        return BWTDosageSensorExtraStoredData.from_dict(
+            restored.as_dict()
+        )
+

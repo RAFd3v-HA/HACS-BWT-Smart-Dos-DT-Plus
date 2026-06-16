@@ -84,13 +84,16 @@
         "name": "Water consumption today"
       },
       "monthly_water": {
-        "name": "Water consumption this month"
+        "name": "Water consumption current month"
       },
       "yearly_water": {
-        "name": "Water consumption this year"
+        "name": "Water consumption year"
       },
       "active_warning": {
         "name": "Active warning"
+      },
+      "calculated_dosage": {
+        "name": "Active substance dosage"
       }
     }
   },
