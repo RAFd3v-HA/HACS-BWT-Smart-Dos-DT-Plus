@@ -249,7 +249,7 @@ SENSOR_DESCRIPTIONS = (
         key="uptime_reboot",
         translation_key="uptime_reboot",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: seconds_to_hhmm(
+        value_fn=lambda d: seconds_to_uptime_display(
             d.get("0201", {}).get("uptime")
         ),
     ),

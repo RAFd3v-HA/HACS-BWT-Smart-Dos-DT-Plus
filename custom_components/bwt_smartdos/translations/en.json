@@ -81,13 +81,13 @@
         "name": "Active error messages"
       },
       "daily_water": {
-        "name": "Water consumption today"
+        "name": "Consumption today"
       },
       "monthly_water": {
-        "name": "Water consumption current month"
+        "name": "Consumption current month"
       },
       "yearly_water": {
-        "name": "Water consumption year"
+        "name": "Consumption year"
       },
       "active_warning": {
         "name": "Active warning"

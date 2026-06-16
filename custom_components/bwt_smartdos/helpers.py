@@ -109,19 +109,21 @@ def round_or_none(value: Any, digits: int) -> float | None:
     return round(parsed, digits)
 
 
-def seconds_to_hhmm(value: Any) -> str | None:
-    """Convert seconds to an elapsed HH:MM value.
-
-    Hours are not limited to 23, so an uptime longer than one day is shown
-    for example as 27:15.
-    """
+def seconds_to_uptime_display(value: Any) -> str | None:
+    """Format uptime as HH:MM below 24 hours and as days thereafter."""
     seconds = parse_int(value)
     if seconds is None:
         return None
 
-    total_minutes = max(0, seconds) // 60
-    hours, minutes = divmod(total_minutes, 60)
-    return f"{hours:02d}:{minutes:02d}"
+    seconds = max(0, seconds)
+
+    if seconds < 86400:
+        total_minutes = seconds // 60
+        hours, minutes = divmod(total_minutes, 60)
+        return f"{hours:02d}:{minutes:02d}"
+
+    days = seconds / 86400
+    return f"{days:.2f} d"
 
 
 def seconds_to_days(value: Any) -> float | None:
