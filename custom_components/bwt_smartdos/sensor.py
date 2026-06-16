@@ -33,7 +33,7 @@ from .helpers import (
     parse_int,
     round_or_none,
     seconds_to_days,
-    seconds_to_hhmm,
+    seconds_to_uptime_display,
     status_text,
     text_or_not_provided,
     total_flow_litres,

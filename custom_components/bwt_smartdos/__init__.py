@@ -16,6 +16,7 @@ from .const import (
     DEPRECATED_SENSOR_KEYS,
     DOMAIN,
 )
+from . import sensor as _sensor_platform  # noqa: F401  # Preload platform outside the event loop
 from .coordinator import BWTDataCoordinator
 
 PLATFORMS = ["sensor"]
